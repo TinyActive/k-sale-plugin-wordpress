@@ -14,17 +14,24 @@ class ImageController extends BaseController
                 'path' => '/upload',
                 'methods' => 'POST',
                 'callback' => [$this, 'upload'],
+                'permission_callback' => [$this, 'upload_permissions_check'], // Kiểm tra quyền
             ],
         ];
 
         parent::register_routes($data_router);
     }
 
+    public function upload_permissions_check($request)
+    {
+        // Kiểm tra xem người dùng có quyền 'upload_files' không
+        return current_user_can('upload_files');
+    }
+
     public function upload($request)
     {
-        require_once (ABSPATH . 'wp-admin/includes/image.php');
-        require_once (ABSPATH . 'wp-admin/includes/file.php');
-        require_once (ABSPATH . 'wp-admin/includes/media.php');
+        require_once(ABSPATH . 'wp-admin/includes/image.php');
+        require_once(ABSPATH . 'wp-admin/includes/file.php');
+        require_once(ABSPATH . 'wp-admin/includes/media.php');
 
         $file = $request->get_file_params();
 
@@ -38,6 +45,12 @@ class ImageController extends BaseController
 
             $file_url = $file_info['url'];
             $file_type = wp_check_filetype($file_url, null);
+
+            // Chỉ cho phép các loại tệp tin nhất định (jpg, png)
+            $allowed_types = ['image/jpg', 'image/jpeg', 'image/png'];
+            if (!in_array($file_type['type'], $allowed_types)) {
+                return new WP_Error('invalid_file_type', 'Invalid file type', ['status' => 403]);
+            }
 
             $attachment = [
                 'post_mime_type' => $file_type['type'],

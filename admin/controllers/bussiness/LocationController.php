@@ -23,7 +23,10 @@ class LocationController extends BaseController
     protected function base_get_query($query)
     {
         $tableName = $this->get_table_name("table");
-        return "SELECT wksl.*, COUNT(wkst.TableID) as NumberOfTable FROM $this->table_name wksl LEFT JOIN $tableName wkst ON wksl.LocationID = wkst.LocationID GROUP BY wksl.LocationID LIMIT %d OFFSET %d;";
+        return $wpdb->prepare(
+            "SELECT wksl.*, COUNT(wkst.TableID) as NumberOfTable FROM $this->table_name wksl LEFT JOIN $tableName wkst ON wksl.LocationID = wkst.LocationID GROUP BY wksl.LocationID LIMIT %d OFFSET %d;",
+            $query['limit'], $query['offset']
+        );
     }
 
     /**
@@ -34,10 +37,15 @@ class LocationController extends BaseController
         global $wpdb;
         $data = $request->get_json_params();
         $location_data = [
-            'LocationName' => $data['LocationName'],
-            'LocationID' => $data['LocationID'] ?? 0,
+            'LocationName' => sanitize_text_field($data['LocationName']),
+            'LocationID' => isset($data['LocationID']) ? intval($data['LocationID']) : 0,
         ];
-        $seat_data = (int)$data['NumberOfSeat'];
+        $seat_data = isset($data['NumberOfSeat']) ? intval($data['NumberOfSeat']) : 0;
+
+        if ($seat_data <= 0) {
+            return new WP_Error('invalid_seat_number', 'Number of seats must be greater than 0', ['status' => 400]);
+        }
+
         try {
             $wpdb->query('START TRANSACTION');
 
@@ -48,7 +56,7 @@ class LocationController extends BaseController
             } else {
                 // Insert a new record
                 $wpdb->insert($this->table_name, $location_data);
-                $data[$this->key] = $wpdb->insert_id;
+                $location_data['LocationID'] = $wpdb->insert_id;
             }
 
             if ($wpdb->last_error) {
@@ -58,32 +66,22 @@ class LocationController extends BaseController
             // Xử lý lưu trữ Table
             $tableName = $this->get_table_name("table");
 
-            // I want to handle if exist TableID then update else insert
-            // Get list of table in database has LocationID = $data['LocationID']
-            $tables = $wpdb->get_results($wpdb->prepare("SELECT * FROM $tableName WHERE LocationID = %d", $data['LocationID']));
-            for ($i = 1; $i <= $seat_data; $i++) {
-                // if exist in $tables then update else insert
-                $existing = null;
-                
-                foreach ($tables as $table) {
-                    if ($table->TableName == $i) {
-                        $existing = $table;
-                        break;
-                    }
-                }
+            // Get list of tables in the database with the same LocationID
+            $tables = $wpdb->get_results($wpdb->prepare("SELECT * FROM $tableName WHERE LocationID = %d", $location_data['LocationID']));
+            $table_map = [];
+            foreach ($tables as $table) {
+                $table_map[intval($table->TableName)] = $table;
+            }
 
-                if ($existing != null) {
-                    // // Update the existing record
-                    // $wpdb->update($tableName, [
-                    //     'LocationID' => $data[$this->key],
-                    //     'TableName' => $i,
-                    // ], [
-                    //     'TableID' => $existing->TableID,
-                    // ]);
+            for ($i = 1; $i <= $seat_data; $i++) {
+                if (isset($table_map[$i])) {
+                    // Update the existing record (if needed)
+                    // Uncomment and use the following line if you need to update existing tables
+                    // $wpdb->update($tableName, ['LocationID' => $location_data['LocationID'], 'TableName' => $i], ['TableID' => $table_map[$i]->TableID]);
                 } else {
                     // Insert a new record
                     $wpdb->insert($tableName, [
-                        'LocationID' => $data[$this->key],
+                        'LocationID' => $location_data['LocationID'],
                         'TableName' => $i,
                     ]);
                 }
@@ -94,11 +92,11 @@ class LocationController extends BaseController
 
             $wpdb->query('COMMIT');
 
-            return $this->ok($data);
+            return $this->ok($location_data);
         } catch (Exception $e) {
-            //throw $th;
+            $wpdb->query('ROLLBACK');
+            return new WP_Error('database_error', $e->getMessage(), ['status' => 500]);
         }
     }
-
 }
 ?>

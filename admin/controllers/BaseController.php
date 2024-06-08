@@ -4,14 +4,11 @@ class BaseController extends WP_REST_Controller
 {
     protected $namespace = '/k-sale/v1';
     protected $table_name;
-
     protected $key = "id";
-
 
     public function __construct()
     {
         global $wpdb;
-        // $wpdb->hide_errors();
         $this->table_name = $this->get_table_name($this->table_name);
     }
 
@@ -24,8 +21,8 @@ class BaseController extends WP_REST_Controller
     protected function get_controller_name()
     {
         $class_name = get_class($this);
-        $base_text = str_replace('Controller', '', $class_name); // replace 'Controller' with ''
-        return strtolower($base_text) . 's'; // add 's' to the end
+        $base_text = str_replace('Controller', '', $class_name);
+        return strtolower($base_text) . 's';
     }
 
     protected function ok($data = null)
@@ -35,43 +32,47 @@ class BaseController extends WP_REST_Controller
 
     public function register_routes($data_router = [])
     {
-
         // Base
-        register_rest_route($this->namespace, $this->get_controller_name(), [
+        register_rest_route($this->namespace, '/' . $this->get_controller_name(), [
             [
                 'methods' => 'GET',
                 'callback' => [$this, 'get_item'],
+                'permission_callback' => [$this, 'get_route_access'],
             ],
             [
                 'methods' => 'POST',
                 'callback' => [$this, 'insert'],
+                'permission_callback' => [$this, 'get_route_access'],
             ],
             [
                 'methods' => 'PUT',
                 'callback' => [$this, 'update'],
+                'permission_callback' => [$this, 'get_route_access'],
             ],
             [
                 'methods' => 'DELETE',
                 'callback' => [$this, 'delete'],
+                'permission_callback' => [$this, 'get_route_access'],
             ],
         ]);
 
         // Base
-        register_rest_route($this->namespace, $this->get_controller_name() . '/list', [
+        register_rest_route($this->namespace, '/' . $this->get_controller_name() . '/list', [
             [
                 'methods' => 'GET',
                 'callback' => [$this, 'get_items'],
+                'permission_callback' => [$this, 'get_route_access'],
             ]
         ]);
 
         // Custom
         if (count($data_router) > 0) {
-
             foreach ($data_router as $router) {
                 register_rest_route($this->namespace, '/' . $this->get_controller_name() . $router['path'], [
                     [
                         'methods' => $router['methods'],
                         'callback' => $router['callback'],
+                        'permission_callback' => [$this, 'get_route_access'],
                     ],
                 ]);
             }
@@ -82,51 +83,51 @@ class BaseController extends WP_REST_Controller
     {
         global $wpdb;
         $data = $request->get_json_params();
+        $data = array_map('sanitize_text_field', $data);  // Sanitize input
+
         $wpdb->insert($this->table_name, $data);
         if ($wpdb->last_error) {
-            return new WP_REST_Response((object) ['message' => "Lỗi"], 500);
+            return new WP_REST_Response((object) ['message' => "Lỗi: " . $wpdb->last_error], 500);
         }
         $data[$this->key] = $wpdb->insert_id;
         return $this->ok($data);
-
     }
 
     public function update($request)
     {
         global $wpdb;
         $data = $request->get_json_params();
-        $id = $data[$this->key];
+        $id = absint($data[$this->key]);
+        $data = array_map('sanitize_text_field', $data);  // Sanitize input
+
         $wpdb->update($this->table_name, $data, [$this->key => $id]);
         if ($wpdb->last_error) {
-            return new WP_REST_Response((object) ['message' => "Lỗi"], 500);
+            return new WP_REST_Response((object) ['message' => "Lỗi: " . $wpdb->last_error], 500);
         }
         return $this->ok($data);
     }
 
-    public function delete($request){
+    public function delete($request)
+    {
         global $wpdb;
-        $id = $request['id'] ?? 0;
+        $id = absint($request['id'] ?? 0);
+
         if ($id > 0) {
             $wpdb->delete($this->table_name, [$this->key => $id]);
             if ($wpdb->last_error) {
-                return new WP_REST_Response((object) ['message' => "Lỗi"], 500);
+                return new WP_REST_Response((object) ['message' => "Lỗi: " . $wpdb->last_error], 500);
             }
             return $this->ok();
         }
         return new WP_REST_Response((object) ['message' => "ID không hợp lệ"], 400);
     }
 
-    protected function base_get_query($query)
-    {
-        return $query;
-    }
-
     public function get_items($request)
     {
         global $wpdb;
 
-        $per_page = $request['per_page'] ?? 50;
-        $page = $request['page'] ?? 1;
+        $per_page = absint($request['per_page'] ?? 50);
+        $page = absint($request['page'] ?? 1);
         $offset = ($page - 1) * $per_page;
 
         $items = $wpdb->get_results(
@@ -160,7 +161,7 @@ class BaseController extends WP_REST_Controller
         global $wpdb;
 
         // Handle get data by ID
-        $id = $request['id'] ?? 0;
+        $id = absint($request['id'] ?? 0);
         if ($id > 0) {
             $item = $wpdb->get_row($wpdb->prepare("SELECT * FROM $this->table_name WHERE $this->key = %d", $id));
             if ($item) {
@@ -179,7 +180,9 @@ class BaseController extends WP_REST_Controller
 
     public function get_route_access($request)
     {
-        return true;
+        // You can implement any kind of access check here.
+        // For example, checking if the user has a specific capability.
+        return current_user_can('manage_options');  // Example: only allow admin users
     }
 }
 ?>

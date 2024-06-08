@@ -1,4 +1,4 @@
-=== Plugin Name ===
+## Plugin Name
 Contributors: (this should be a list of wordpress.org userid's)
 Donate link: https://thangdangblog.com/
 Tags: comments, spam
@@ -10,7 +10,7 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
 Here is a short description of the plugin.  This should be no more than 150 characters.  No markup here.
 
-== Description ==
+## Description 
 
 This is the long description.  No limit, and you can use Markdown (as well as in the following sections).
 
@@ -37,7 +37,7 @@ that lacks those changes -- as long as the trunk's `readme.txt` points to the co
     If no stable tag is provided, it is assumed that trunk is stable, but you should specify "trunk" if that's where
 you put the stable version, in order to eliminate any doubt.
 
-== Installation ==
+## Installation
 
 This section describes how to install the plugin and get it working.
 
@@ -47,17 +47,16 @@ e.g.
 1. Activate the plugin through the 'Plugins' menu in WordPress
 1. Place `<?php do_action('plugin_name_hook'); ?>` in your templates
 
-== Frequently Asked Questions ==
-
-= A question that someone might have =
+## Frequently Asked Questions
+ A question that someone might have
 
 An answer to that question.
 
-= What about foo bar? =
+= What about foo bar? 
 
 Answer to foo bar dilemma.
 
-== Screenshots ==
+## Screenshots
 
 1. This screen shot description corresponds to screenshot-1.(png|jpg|jpeg|gif). Note that the screenshot is taken from
 the /assets directory or the directory that contains the stable readme.txt (tags or trunk). Screenshots in the /assets
@@ -65,13 +64,13 @@ directory take precedence. For example, `/assets/screenshot-1.png` would win ove
 (or jpg, jpeg, gif).
 2. This is the second screen shot
 
-== Changelog ==
+## Changelog 
 
-= 1.0 =
+1.0
 * A change since the previous version.
 * Another change.
 
-= 0.5 =
+0.5
 * List versions from most recent at top to oldest at bottom.
 
 == Upgrade Notice ==

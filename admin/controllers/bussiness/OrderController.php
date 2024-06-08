@@ -34,16 +34,16 @@ class OrderController extends BaseController
     {
         global $wpdb;
 
-        $per_page = $request['per_page'] ?? 50;
-        $page = $request['page'] ?? 1;
+        $per_page = intval($request['per_page'] ?? 50);
+        $page = intval($request['page'] ?? 1);
         $offset = ($page - 1) * $per_page;
 
         $items = $wpdb->get_results(
-            $wpdb->prepare($this->base_get_query("SELECT * FROM $this->table_name WHERE `Status` = 3 ORDER BY $this->key DESC  LIMIT %d OFFSET %d"), $per_page, $offset)
+            $wpdb->prepare("SELECT * FROM $this->table_name WHERE `Status` = 3 ORDER BY $this->key DESC LIMIT %d OFFSET %d", $per_page, $offset)
         );
 
         // Query to get the total number of items
-        $total = $wpdb->get_var("SELECT COUNT(1) FROM $this->table_name");
+        $total = $wpdb->get_var("SELECT COUNT(1) FROM $this->table_name WHERE `Status` = 3");
 
         // Calculate the total number of pages
         $total_pages = ceil($total / $per_page);
@@ -68,14 +68,13 @@ class OrderController extends BaseController
     {
         global $wpdb;
         $orderDetailTable = $wpdb->prefix . 'k_sale_order_detail';
-        // Get OrderID from request
-        $orderId = $request['OrderID'];
+        $orderId = intval($request['OrderID']);
 
         // Get order
-        $order = $wpdb->get_row("SELECT * FROM {$this->table_name} WHERE OrderID = $orderId", ARRAY_A);
+        $order = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$this->table_name} WHERE OrderID = %d", $orderId), ARRAY_A);
 
         // Get order details
-        $orderDetails = $wpdb->get_results("SELECT * FROM {$orderDetailTable} WHERE OrderID = $orderId", ARRAY_A);
+        $orderDetails = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$orderDetailTable} WHERE OrderID = %d", $orderId), ARRAY_A);
 
         return $this->ok((object) ['Order' => $order, 'OrderDetails' => $orderDetails]);
     }
@@ -93,28 +92,22 @@ class OrderController extends BaseController
         try {
             $wpdb->query('START TRANSACTION');
 
-            // change OrderDate to now
+            // change OrderDate to now if State is 1
             if ($order['State'] == 1) {
                 $order['OrderDate'] = date('Y-m-d H:i:s');
             }
 
-            // Save order
             // Handle order based on state
             switch ($order['State']) {
-
                 case 1: // Insert
-                    // remove state from $order
                     unset($order['State']);
                     $wpdb->insert($this->table_name, $order);
                     break;
                 case 2: // Update
-                    // remove state from $order
                     unset($order['State']);
                     $wpdb->update($this->table_name, $order, ['OrderID' => $order['OrderID']]);
-
                     break;
                 case 3: // Delete
-                    // remove state from $order
                     unset($order['State']);
                     $wpdb->delete($this->table_name, ['OrderID' => $order['OrderID']]);
                     break;
@@ -125,11 +118,7 @@ class OrderController extends BaseController
             }
 
             // Get OrderID
-            if ($order['OrderID'] == null) {
-                $orderId = $wpdb->insert_id;
-            } else {
-                $orderId = $order['OrderID'];
-            }
+            $orderId = $order['OrderID'] ?? $wpdb->insert_id;
 
             // Handle order details based on state
             $orderDetailsResult = [];
@@ -138,21 +127,17 @@ class OrderController extends BaseController
 
                 switch ($detail['State']) {
                     case 1: // Insert
-                        // remove state from $detail
                         unset($detail['State']);
                         $wpdb->insert($orderDetailTable, $detail);
                         $detail['OrderDetailID'] = $wpdb->insert_id;
-
                         array_push($orderDetailsResult, $detail);
                         break;
                     case 2: // Update
-                        // remove state from $detail
                         unset($detail['State']);
                         $wpdb->update($orderDetailTable, $detail, ['OrderDetailID' => $detail['OrderDetailID']]);
                         array_push($orderDetailsResult, $detail);
                         break;
                     case 3: // Delete
-                        // remove state from $detail
                         unset($detail['State']);
                         $wpdb->delete($orderDetailTable, ['OrderDetailID' => $detail['OrderDetailID']]);
                         break;
@@ -175,11 +160,11 @@ class OrderController extends BaseController
             // if status = 5, insert to invoice and invoice detail if not exist else update
             if ($order['Status'] == 5) {
                 // get order in database 
-                $orderFull = $wpdb->get_row("SELECT * FROM {$this->table_name} WHERE OrderID = $orderId", ARRAY_A);
-                $orderDetailFull = $wpdb->get_results("SELECT * FROM {$orderDetailTable} WHERE OrderID = $orderId", ARRAY_A);
+                $orderFull = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$this->table_name} WHERE OrderID = %d", $orderId), ARRAY_A);
+                $orderDetailFull = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$orderDetailTable} WHERE OrderID = %d", $orderId), ARRAY_A);
                 $invoiceTable = $wpdb->prefix . 'k_sale_invoice';
                 $invoiceDetailTable = $wpdb->prefix . 'k_sale_invoice_detail';
-                $invoice = $wpdb->get_row("SELECT * FROM {$invoiceTable} WHERE OrderID = $orderId", ARRAY_A);
+                $invoice = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$invoiceTable} WHERE OrderID = %d", $orderId), ARRAY_A);
 
                 if ($invoice == null) {
                     $invoice = [
@@ -196,7 +181,7 @@ class OrderController extends BaseController
                 }
 
                 foreach ($orderDetailFull as $detail) {
-                    $invoiceDetail = $wpdb->get_row("SELECT * FROM {$invoiceDetailTable} WHERE OrderDetailID = {$detail['OrderDetailID']}", ARRAY_A);
+                    $invoiceDetail = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$invoiceDetailTable} WHERE OrderDetailID = %d", $detail['OrderDetailID']), ARRAY_A);
 
                     if ($invoiceDetail == null) {
                         $invoiceDetail = [
@@ -216,12 +201,10 @@ class OrderController extends BaseController
                     }
                 }
             }
-            
 
             return $this->ok((object) ['Order' => $order, 'OrderDetails' => $orderDetailsResult]);
         } catch (Exception $e) {
             $wpdb->query('ROLLBACK');
-
             return ['message' => 'Failed to save Order and Order Details', 'error' => $e->getMessage()];
         }
     }

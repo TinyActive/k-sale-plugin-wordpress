@@ -26,7 +26,7 @@ class InvoiceController extends BaseController
         global $wpdb;
         $invoiceDetailTable = $wpdb->prefix . 'k_sale_invoice_detail';
         // Get OrderID from request
-        $invoiceID = $request['InvoiceID'];
+        $invoiceID = intval($request['InvoiceID']);
 
         // Get order
         $invoices = $wpdb->get_row("SELECT * FROM {$this->table_name} WHERE InvoiceID = $invoiceID", ARRAY_A);

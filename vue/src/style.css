@@ -1,0 +1,114 @@
+/* RESET CSS */
+input[type=date],
+input[type=datetime-local],
+input[type=datetime],
+input[type=email],
+input[type=month],
+input[type=number],
+input[type=password],
+input[type=search],
+input[type=tel],
+input[type=text],
+input[type=time],
+input[type=url],
+input[type=week] {
+    padding: 16px 16px;
+    line-height: 1.4em;
+    min-height: unset;
+}
+
+input[type=color],
+input[type=date],
+input[type=datetime-local],
+input[type=datetime],
+input[type=email],
+input[type=month],
+input[type=number],
+input[type=password],
+input[type=search],
+input[type=tel],
+input[type=text],
+input[type=time],
+input[type=url],
+input[type=week],
+select,
+textarea {
+    box-shadow: unset;
+    border-radius: unset;
+    border: unset;
+    background-color: unset;
+    color: unset;
+}
+
+input[type=checkbox]:focus,
+input[type=color]:focus,
+input[type=date]:focus,
+input[type=datetime-local]:focus,
+input[type=datetime]:focus,
+input[type=email]:focus,
+input[type=month]:focus,
+input[type=number]:focus,
+input[type=password]:focus,
+input[type=radio]:focus,
+input[type=search]:focus,
+input[type=tel]:focus,
+input[type=text]:focus,
+input[type=time]:focus,
+input[type=url]:focus,
+input[type=week]:focus,
+select:focus,
+textarea:focus {
+    border-color: unset;
+    box-shadow: unset;
+    outline: unset;
+}
+
+/* RESET CSS */
+
+.button-100 {
+    width: 100% !important;
+}
+
+.text-link {
+    color: #007bff;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+*:focus {
+    outline: none !important;
+}
+
+.box-content {
+    background: white;
+    padding: 12px;
+    box-shadow: 0 2px 4px hsla(0, 0%, 66%, .25);
+    border-radius: 6px;
+}
+
+div#app.fullscreen {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 99;
+    user-select: none !important;
+}
+
+.main-list-oder {
+    height: 100vh;
+}
+
+.text-right input {
+    text-align: right;
+}
+
+#wpadminbar,
+#adminmenuwrap {
+    z-index: 10 !important;
+}
+
+.over-hidden{
+    overflow: hidden;
+}

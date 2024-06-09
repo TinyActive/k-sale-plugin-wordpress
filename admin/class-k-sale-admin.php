@@ -18,7 +18,7 @@
  *
  * @package    K_Sale
  * @subpackage K_Sale/admin
- * @author     Đặng Quốc Thắng <thangdangblog@gmail.com>
+ * @authỏ     Đặng Quốc Thắng <thangdangblog@gmail.com>
  */
 class K_Sale_Admin
 {
@@ -50,10 +50,8 @@ class K_Sale_Admin
 	 */
 	public function __construct($plugin_name, $version)
 	{
-
-		$this->plugin_name = $plugin_name;
-		$this->version = $version;
-
+		$this->plugin_name = sanitize_text_field($plugin_name);
+		$this->version = sanitize_text_field($version);
 	}
 
 	/**
@@ -63,24 +61,8 @@ class K_Sale_Admin
 	 */
 	public function enqueue_styles()
 	{
-
-		/**
-		 * This function is provided for demonstration purposes only.
-		 *
-		 * An instance of this class should be passed to the run() function
-		 * defined in K_Sale_Loader as all of the hooks are defined
-		 * in that particular class.
-		 *
-		 * The K_Sale_Loader will then create the relationship
-		 * between the defined hooks and the functions defined in this
-		 * class.
-		 */
-
 		wp_enqueue_style($this->plugin_name, plugin_dir_url(__FILE__) . 'css/k-sale-admin.css', array(), $this->version, 'all');
-
-		// Bổ sung thêm code này để thêm app.css
 		wp_enqueue_style($this->plugin_name . '_app_css', plugin_dir_url(__FILE__) . 'build/app.css', array(), $this->version, 'all');
-
 	}
 
 	/**
@@ -90,51 +72,42 @@ class K_Sale_Admin
 	 */
 	public function enqueue_scripts()
 	{
-
-		/**
-		 * This function is provided for demonstration purposes only.
-		 *
-		 * An instance of this class should be passed to the run() function
-		 * defined in K_Sale_Loader as all of the hooks are defined
-		 * in that particular class.
-		 *
-		 * The K_Sale_Loader will then create the relationship
-		 * between the defined hooks and the functions defined in this
-		 * class.
-		 */
-
 		wp_enqueue_script($this->plugin_name, plugin_dir_url(__FILE__) . 'js/k-sale-admin.js', array('jquery'), $this->version, false);
-
-		// Bổ sung thêm code này để thêm app.js
 		wp_enqueue_script($this->plugin_name . '_app_js', plugin_dir_url(__FILE__) . 'build/app.js', array(), $this->version, false);
 		wp_enqueue_script($this->plugin_name . '_config_app_js', plugin_dir_url(__FILE__) . 'build/js/config.js', array(), $this->version, false);
-
 	}
 
 	public function script_loader_type_module($tag, $handle, $src)
 	{
-
 		if ($this->plugin_name . '_app_js' !== $handle) {
 			return $tag;
 		}
-		// change the script tag by adding type="module" and return it.
 		return '<script type="module" src="' . esc_url($src) . '"></script>';
-
 	}
 
 	function remove_default_stylesheets()
 	{
+		if (!current_user_can('manage_options')) {
+			wp_die(__('You do not have sufficient permissions to access this page.'));
+		}
 		wp_deregister_style('wp-admin');
 	}
 	
 	function add_default_stylesheets()
 	{
+		if (!current_user_can('manage_options')) {
+			wp_die(__('You do not have sufficient permissions to access this page.'));
+		}
 		wp_register_style('wp-admin');
 	}
 
 	// Tạo trang trong admin
 	function create_admin_page()
 	{
+		if (!current_user_can('manage_options')) {
+			wp_die(__('You do not have sufficient permissions to access this page.'));
+		}
+
 		add_menu_page(
 			'K Bán hàng',
 			'K Bán hàng',
@@ -155,6 +128,10 @@ class K_Sale_Admin
 	// Create parent and child pages in admin
 	function create_setting_page()
 	{
+		if (!current_user_can('manage_options')) {
+			wp_die(__('You do not have sufficient permissions to access this page.'));
+		}
+
 		// Create parent page
 		add_menu_page(
 			'Thiết lập cửa hàng',
@@ -168,12 +145,12 @@ class K_Sale_Admin
 
 		// Create child page
 		add_submenu_page(
-			'setting-sale', // Parent slug
-			'Thiết lâp bàn', // Page title
-			'Thiết lâp bàn', // Menu title
-			'manage_options', // Capability
-			'setting-seat-page', // Menu slug
-			[$this, 'child_seat_page_content'] // Function to display the page content
+			'setting-sale',
+			'Thiết lâp bàn',
+			'Thiết lâp bàn',
+			'manage_options',
+			'setting-seat-page',
+			[$this, 'child_seat_page_content']
 		);
 	}
 
@@ -183,16 +160,18 @@ class K_Sale_Admin
 		echo '<div id="app"></div>';
 	}
 
-	// Content for the child page
+	// Content for the custom setting page
 	function custom_setting_page_content()
 	{
 		echo '<div id="app"></div>';
 	}
 
-
 	function product_page()
 	{
-		// Create parent page
+		if (!current_user_can('manage_options')) {
+			wp_die(__('You do not have sufficient permissions to access this page.'));
+		}
+
 		add_menu_page(
 			'Mặt hàng',
 			'Mặt hàng',
@@ -202,7 +181,6 @@ class K_Sale_Admin
 			'dashicons-products',
 			11
 		);
-
 	}
 
 	// Content for the product page
@@ -213,7 +191,10 @@ class K_Sale_Admin
 
 	function add_product_page()
 	{
-		// Create parent page
+		if (!current_user_can('manage_options')) {
+			wp_die(__('You do not have sufficient permissions to access this page.'));
+		}
+
 		add_submenu_page(
 			null,
 			'',
@@ -223,7 +204,6 @@ class K_Sale_Admin
 			[$this, 'add_product_page_content'],
 			11
 		);
-
 	}
 
 	public function add_product_page_content()
@@ -233,7 +213,10 @@ class K_Sale_Admin
 
 	function add_invoice_page()
 	{
-		// Create parent page
+		if (!current_user_can('manage_options')) {
+			wp_die(__('You do not have sufficient permissions to access this page.'));
+		}
+
 		add_menu_page(
 			'Hóa đơn',
 			'Hóa đơn',
@@ -243,7 +226,6 @@ class K_Sale_Admin
 			'dashicons-media-document',
 			11
 		);
-
 	}
 
 	public function add_invoice_page_content()
@@ -252,3 +234,4 @@ class K_Sale_Admin
 	}
 
 }
+?>
